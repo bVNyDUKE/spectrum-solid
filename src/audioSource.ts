@@ -2,12 +2,9 @@ import { createSignal } from "solid-js";
 
 const [rawData, setRawData] = createSignal<number[]>([]);
 
-export const startFromFile = async () => {
-  const res = await fetch("/EpicTrailer.mp3");
-  const byteArray = await res.arrayBuffer();
-
+export const startFromFile = async (fileBuf: ArrayBuffer) => {
   const context = new AudioContext();
-  const audioBuffer = await context.decodeAudioData(byteArray);
+  const audioBuffer = await context.decodeAudioData(fileBuf);
 
   const source = context.createBufferSource();
   source.buffer = audioBuffer;

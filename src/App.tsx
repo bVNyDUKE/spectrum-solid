@@ -1,4 +1,4 @@
-import { type Component, createMemo, For } from "solid-js";
+import { type Component, createMemo, For, createSignal } from "solid-js";
 import { arc, interpolateSinebow, interpolateInferno } from "d3";
 
 import { startFromFile, rawData } from "./audioSource";
@@ -12,9 +12,14 @@ const RadialGraph: Component<{
   const computed = createMemo(() => {
     const data = rawData();
 
-    const total = data.reduce((a, v) => a + v, 0);
-
-    const highCount = data.filter((d) => d > 32).length;
+    let total = 0;
+    let highCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      total += data[i];
+      if (data[i] > 32) {
+        highCount++;
+      }
+    }
     const intensity = highCount / data.length;
 
     const paths: {
@@ -54,17 +59,55 @@ const RadialGraph: Component<{
 };
 
 const App: Component = () => {
+  const [uploaded, setUploaded] = createSignal(false);
+
+  const handleFileSelect = async (
+    event: Event & {
+      currentTarget: HTMLInputElement;
+      target: HTMLInputElement;
+    },
+  ) => {
+    const files = event.target.files;
+    if (!files || files?.length !== 1) {
+      return;
+    }
+    const file = files[0];
+    const buf = await file.arrayBuffer();
+    const audioUrl = URL.createObjectURL(files[0]);
+    const audio = new Audio(audioUrl);
+    audio.play();
+    setUploaded(true);
+    startFromFile(buf);
+  };
+
   return (
-    <div onClick={startFromFile} style="width: 100vw; height: 100vh;">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="-100 -100 200 200"
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <RadialGraph color={interpolateSinebow} scale={2.5} />
-        <RadialGraph color={interpolateInferno} scale={1.5} />
-      </svg>
+    <div>
+      {uploaded() ? (
+        <div style="width: 100vw; height: 100vh;">
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="-100 -100 200 200"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <RadialGraph color={interpolateSinebow} scale={2.5} />
+            <RadialGraph color={interpolateInferno} scale={1.5} />
+          </svg>
+        </div>
+      ) : (
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: center; width: 100vw; height: 100vh;">
+          <label for="audiofile" style="color: white">
+            Choose an audio file:
+          </label>
+          <input
+            type="file"
+            onChange={handleFileSelect}
+            id="audiofile"
+            name="audiofile"
+            accept="audio/mp3"
+          />
+        </div>
+      )}
     </div>
   );
 };
