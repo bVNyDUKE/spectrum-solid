@@ -6,7 +6,7 @@ import {
 } from "solid-js";
 import { arc, interpolateSinebow, interpolateInferno, select } from "d3";
 
-import { startFromFile, rawData } from "./audioSource";
+import { startFromAudioSource, rawData } from "./audioSource";
 
 const arcBuilder = arc();
 
@@ -79,25 +79,6 @@ const RadialGraph: Component<{
 const App: Component = () => {
   const [uploaded, setUploaded] = createSignal(false);
 
-  const handleFileSelect = async (
-    event: Event & {
-      currentTarget: HTMLInputElement;
-      target: HTMLInputElement;
-    },
-  ) => {
-    const files = event.target.files;
-    if (!files || files?.length !== 1) {
-      return;
-    }
-    const file = files[0];
-    const buf = await file.arrayBuffer();
-    const audioUrl = URL.createObjectURL(files[0]);
-    const audio = new Audio(audioUrl);
-    audio.play();
-    setUploaded(true);
-    startFromFile(buf);
-  };
-
   return (
     <div>
       {uploaded() ? (
@@ -119,7 +100,10 @@ const App: Component = () => {
           </label>
           <input
             type="file"
-            onChange={handleFileSelect}
+            onChange={(e) => {
+              startFromAudioSource(e);
+              setUploaded(true);
+            }}
             id="audiofile"
             name="audiofile"
             accept="audio/mp3"
