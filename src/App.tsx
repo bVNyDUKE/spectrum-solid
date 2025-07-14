@@ -1,5 +1,10 @@
-import { type Component, createMemo, For, createSignal } from "solid-js";
-import { arc, interpolateSinebow, interpolateInferno } from "d3";
+import {
+  type Component,
+  createMemo,
+  createSignal,
+  createEffect,
+} from "solid-js";
+import { arc, interpolateSinebow, interpolateInferno, select } from "d3";
 
 import { startFromFile, rawData } from "./audioSource";
 
@@ -8,7 +13,8 @@ const arcBuilder = arc();
 const RadialGraph: Component<{
   color: (value: number) => string;
   scale: number;
-}> = ({ color, scale }) => {
+  id: string;
+}> = ({ color, scale, id }) => {
   const computed = createMemo(() => {
     const data = rawData();
 
@@ -39,23 +45,35 @@ const RadialGraph: Component<{
         outerRadius: 50 + ((d + 10) / 255) * 35,
         startAngle: currentAngle,
         endAngle: currentAngle + angle,
-      })!;
-      paths.push({
-        path,
-        color: color(d / 255),
       });
+      path &&
+        paths.push({
+          path,
+          color: color(d / 255),
+        });
       currentAngle += angle;
     }
 
     return { paths, intensity };
   });
-  return (
-    <g transform={`scale(${computed().intensity * scale + 1})`}>
-      <For each={computed().paths}>
-        {(p) => <path d={p.path} fill={p.color} />}
-      </For>
-    </g>
-  );
+
+  createEffect(() => {
+    select(`#${id}`)
+      .selectAll("path")
+      .data(computed().paths)
+      .join(
+        (enter) =>
+          enter
+            .append("path")
+            .attr("d", (d) => d.path)
+            .attr("fill", (d) => d.color),
+        (update) =>
+          update.attr("d", (d) => d.path).attr("fill", (d) => d.color),
+        (exit) => exit.remove(),
+      );
+  });
+
+  return <g id={id} transform={`scale(${computed().intensity * scale + 1})`} />;
 };
 
 const App: Component = () => {
@@ -90,8 +108,8 @@ const App: Component = () => {
             viewBox="-100 -100 200 200"
             preserveAspectRatio="xMidYMid meet"
           >
-            <RadialGraph color={interpolateSinebow} scale={2.5} />
-            <RadialGraph color={interpolateInferno} scale={1.5} />
+            <RadialGraph id="sinebow" color={interpolateSinebow} scale={2.5} />
+            <RadialGraph id="inferno" color={interpolateInferno} scale={1.5} />
           </svg>
         </div>
       ) : (
