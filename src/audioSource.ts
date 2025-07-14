@@ -13,7 +13,6 @@ export const startFromFile = async (fileBuf: ArrayBuffer) => {
   analyzer.fftSize = 512;
 
   source.connect(analyzer);
-  // analyzer.connect(context.destination);
   source.start();
 
   const bufferLength = analyzer.frequencyBinCount;
