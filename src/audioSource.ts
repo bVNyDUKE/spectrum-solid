@@ -34,7 +34,7 @@ export const startFromAudioSource = (
   const update = () => {
     analyzer.getByteFrequencyData(dataArray);
     const orig = Array.from(dataArray);
-    setRawData([[...orig].reverse(), orig].flat());
+    setRawData(orig.toReversed().concat(orig));
     requestAnimationFrame(update);
   };
 
